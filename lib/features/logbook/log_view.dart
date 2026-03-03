@@ -21,10 +21,8 @@ class _LogViewState extends State<LogView> {
   final TextEditingController _descController = TextEditingController();
   final TextEditingController _searchController = TextEditingController();
 
-  // Variabel status loading
   bool _isLoading = true; 
 
-  // Variabel Filter (Sekarang DIPAKAI lagi)
   String _selectedCategory = 'Pekerjaan';
   String _filterCategory = 'Semua'; 
   final List<String> _categories = ['Pekerjaan', 'Pribadi', 'Urgent'];
@@ -49,7 +47,6 @@ class _LogViewState extends State<LogView> {
     Future.microtask(() => _initDatabase());
   }
 
-  // Fungsi Koneksi dengan Error Handling Cantik (Homework Task 1)
   Future<void> _initDatabase() async {
     setState(() => _isLoading = true);
     try {
@@ -96,7 +93,7 @@ class _LogViewState extends State<LogView> {
     super.dispose();
   }
 
-  // --- DIALOGS (Tetap Sama) ---
+  // --- DIALOGS ---
   void _showDetailDialog(LogModel log) {
     showDialog(
       context: context,
@@ -119,7 +116,25 @@ class _LogViewState extends State<LogView> {
                   const SizedBox(width: 10),
                   Text(log.category.toUpperCase(), style: TextStyle(color: _getCategoryColor(log.category), fontWeight: FontWeight.bold)),
                   const Spacer(),
-                  IconButton(icon: const Icon(Icons.close, color: Colors.grey), onPressed: () => Navigator.pop(context))
+                  // [BARU] Menampilkan Nama Author di header dialog
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.5), borderRadius: BorderRadius.circular(12)),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.person, size: 14, color: Colors.blueGrey),
+                        const SizedBox(width: 4),
+                        Text(log.author, style: const TextStyle(fontSize: 12, color: Colors.blueGrey, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.grey), 
+                    onPressed: () => Navigator.pop(context),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  )
                 ],
               ),
             ),
@@ -129,7 +144,6 @@ class _LogViewState extends State<LogView> {
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Text(log.title, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: _textNavy)),
                     const SizedBox(height: 8),
-                    // Tanggal akan diformat oleh widget item, disini raw string
                     Text(log.date, style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
                     const SizedBox(height: 20),
                     Text(log.description, style: TextStyle(fontSize: 16, color: Colors.blueGrey.shade700, height: 1.6)),
@@ -267,18 +281,17 @@ class _LogViewState extends State<LogView> {
       ),
       body: Column(
         children: [
-          // 1. AREA SEARCH & FILTER (KEMBALI LENGKAP)
+          // 1. AREA SEARCH & FILTER 
           Container(
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
             child: Row(
               children: [
-                // SEARCH BAR
                 Expanded(
                   child: TextField(
                     controller: _searchController,
                     onChanged: (value) => _controller.searchLog(query: value), 
                     decoration: InputDecoration(
-                      hintText: "Cari...",
+                      hintText: "Cari judul, isi, atau pembuat...",
                       prefixIcon: Icon(Icons.search, color: _themeColor),
                       filled: true, fillColor: Colors.white,
                       contentPadding: const EdgeInsets.symmetric(horizontal: 20),
@@ -288,7 +301,6 @@ class _LogViewState extends State<LogView> {
                 ),
                 const SizedBox(width: 8),
                 
-                // FILTER DROPDOWN (YANG HILANG TADI, SEKARANG KEMBALI)
                 Container(
                   height: 48,
                   padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -317,7 +329,6 @@ class _LogViewState extends State<LogView> {
                   ),
                 ),
                 
-                // TOMBOL RESET
                 if (_searchController.text.isNotEmpty || _filterCategory != 'Semua') 
                   Padding(
                     padding: const EdgeInsets.only(left: 8),
@@ -338,7 +349,7 @@ class _LogViewState extends State<LogView> {
             ),
           ),
 
-          // 2. LIST DATA (DENGAN LOADING & REFRESH)
+          // 2. LIST DATA 
           Expanded(
             child: _isLoading 
               ? Center(child: CircularProgressIndicator(color: _themeColor))
@@ -354,7 +365,6 @@ class _LogViewState extends State<LogView> {
                             const SizedBox(height: 10),
                             const Text("Belum ada data di Cloud", style: TextStyle(fontSize: 16, color: Colors.grey)),
                               TextButton.icon(
-                                // Panggil _initDatabase biar proses koneksi & cek error diulang dari awal
                                 onPressed: _initDatabase, 
                                 icon: const Icon(Icons.refresh), 
                                 label: const Text("Coba Refresh")
@@ -372,7 +382,6 @@ class _LogViewState extends State<LogView> {
                     final safeStartIndex = startIndex > safeEndIndex ? 0 : startIndex;
                     final paginatedLogs = allLogs.sublist(safeStartIndex, safeEndIndex);
 
-                    // Pull-to-Refresh Widget
                     return RefreshIndicator(
                       onRefresh: () async {
                         await _controller.loadFromDisk();

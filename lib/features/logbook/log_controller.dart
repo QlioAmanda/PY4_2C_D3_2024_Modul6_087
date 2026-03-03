@@ -3,10 +3,9 @@ import 'package:flutter/foundation.dart';
 import 'package:mongo_dart/mongo_dart.dart';
 import 'models/log_model.dart';
 import '../../services/mongo_service.dart';
-import '../../helpers/log_helper.dart'; // Import LogHelper
+import '../../helpers/log_helper.dart';
 
 class LogController {
-  // --- STATE (JANGAN UBAH AGAR UI AMAN) ---
   final ValueNotifier<List<LogModel>> logsNotifier = ValueNotifier([]);
   final ValueNotifier<List<LogModel>> filteredLogsNotifier = ValueNotifier([]);
   final String username;
@@ -14,30 +13,22 @@ class LogController {
   String _currentQuery = ""; 
   String _currentCategoryFilter = "Semua";
   
-  // Panggil Service
   final MongoService _mongoService = MongoService();
 
-  LogController(this.username); // Constructor tidak perlu panggil load dulu, nanti dipanggil UI
+  LogController(this.username); 
 
-  // --- LOGIKA CLOUD (Sesuai Modul 4) ---
-  
-  // [MODUL 4] Mengambil Data (Dulu fetchLogs, sekarang loadFromDisk sesuai modul)
   Future<void> loadFromDisk() async {
     try {
-      // Ambil data dari Cloud via Service
-      final cloudData = await _mongoService.getLogs();
+      // [PERBAIKAN] Kirim variabel username agar Service memfilter data yang tepat
+      final cloudData = await _mongoService.getLogs(username);
       logsNotifier.value = cloudData;
-      
-      // [PENTING] Refresh Filter agar data muncul di Search/List UI kamu
       _refreshFilter(); 
-      
-      await LogHelper.writeLog("UI: Data berhasil dimuat ke Notifier.", source: "log_controller.dart");
+      await LogHelper.writeLog("UI: Data milik $username berhasil dimuat ke Notifier.", source: "log_controller.dart");
     } catch (e) {
       await LogHelper.writeLog("ERROR: Gagal load data - $e", level: 1);
     }
   }
 
-  // Tambah Data
   Future<void> addLog(String title, String description, String category) async {
     try {
       final newLog = LogModel(
@@ -46,20 +37,19 @@ class LogController {
         description: description,
         date: DateTime.now().toString(),
         category: category,
+        author: username, 
       );
       
       await _mongoService.insertLog(newLog);
-      await loadFromDisk(); // Refresh data
+      await loadFromDisk(); 
     } catch (e) {
       await LogHelper.writeLog("ERROR: Gagal tambah data - $e", level: 1);
       rethrow;
     }
   }
 
-  // Update Data
   Future<void> updateLog(int index, String newTitle, String newDesc, String newCategory) async {
     try {
-      // Cari data asli dari filtered list (biar ga salah edit pas lagi searching)
       LogModel targetLog = filteredLogsNotifier.value[index];
       if (targetLog.id == null) return;
 
@@ -69,29 +59,28 @@ class LogController {
         description: newDesc,
         date: targetLog.date, 
         category: newCategory,
+        author: targetLog.author, 
       );
 
       await _mongoService.updateLog(updatedLog);
-      await loadFromDisk(); // Refresh
+      await loadFromDisk(); 
     } catch (e) {
       await LogHelper.writeLog("ERROR: Gagal update - $e", level: 1);
     }
   }
 
-  // [MODUL 4] Hapus Data
   Future<void> deleteLog(int index) async {
     try {
       LogModel targetLog = filteredLogsNotifier.value[index];
       if (targetLog.id == null) return;
 
       await _mongoService.deleteLog(targetLog.id!);
-      await loadFromDisk(); // Refresh
+      await loadFromDisk(); 
     } catch (e) {
       await LogHelper.writeLog("ERROR: Gagal hapus - $e", level: 1);
     }
   }
 
-  // --- LOGIKA FILTER & SEARCH (TETAP PERTAHANKAN INI) ---
   void searchLog({String? query, String? category}) {
     if (query != null) _currentQuery = query;
     if (category != null) _currentCategoryFilter = category;
@@ -116,7 +105,8 @@ class LogController {
       results = results.where((log) {
         final titleMatch = log.title.toLowerCase().contains(queryLower);
         final descMatch = log.description.toLowerCase().contains(queryLower);
-        return titleMatch || descMatch;
+        final authorMatch = log.author.toLowerCase().contains(queryLower); 
+        return titleMatch || descMatch || authorMatch; 
       }).toList();
     }
     filteredLogsNotifier.value = results;

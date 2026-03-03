@@ -12,7 +12,6 @@ class MongoService {
   factory MongoService() => _instance;
   MongoService._internal();
 
-  /// Memastikan koleksi siap digunakan (Anti-Error)
   Future<DbCollection> _getSafeCollection() async {
     if (_db == null || !_db!.isConnected || _collection == null) {
       await LogHelper.writeLog("INFO: Koleksi belum siap, mencoba rekoneksi...", source: _source, level: 3);
@@ -21,15 +20,12 @@ class MongoService {
     return _collection!;
   }
 
-  /// Inisialisasi Koneksi ke MongoDB Atlas
   Future<void> connect() async {
     try {
       final dbUri = dotenv.env['MONGODB_URI'];
       if (dbUri == null) throw Exception("MONGODB_URI tidak ditemukan di .env");
 
       _db = await Db.create(dbUri);
-      
-      // Timeout 15 detik agar lebih toleran sinyal HP
       await _db!.open().timeout(
         const Duration(seconds: 15),
         onTimeout: () => throw Exception("Koneksi Timeout. Cek IP Whitelist atau Sinyal HP."),
@@ -43,14 +39,17 @@ class MongoService {
     }
   }
 
-  /// READ: Mengambil data dari Cloud
-  Future<List<LogModel>> getLogs() async {
+  // [PERBAIKAN] Menambahkan parameter author untuk memfilter data milik user tertentu
+  Future<List<LogModel>> getLogs(String author) async {
     try {
       final collection = await _getSafeCollection();
-      await LogHelper.writeLog("INFO: Fetching data from Cloud...", source: _source, level: 3);
+      await LogHelper.writeLog("INFO: Fetching data from Cloud for author: $author...", source: _source, level: 3);
       
-      // Ambil data, urutkan dari terbaru
-      final data = await collection.find(where.sortBy('date', descending: true)).toList();
+      // Mengambil data yang hanya memiliki author sesuai username yang login
+      final data = await collection.find(
+        where.eq('author', author).sortBy('date', descending: true)
+      ).toList();
+      
       return data.map((json) => LogModel.fromMap(json)).toList();
     } catch (e) {
       await LogHelper.writeLog("ERROR: Fetch Failed - $e", source: _source, level: 1);
@@ -58,7 +57,6 @@ class MongoService {
     }
   }
 
-  /// CREATE: Menambahkan data baru
   Future<void> insertLog(LogModel log) async {
     try {
       final collection = await _getSafeCollection();
@@ -70,7 +68,6 @@ class MongoService {
     }
   }
 
-  /// UPDATE: Memperbarui data berdasarkan ID
   Future<void> updateLog(LogModel log) async {
     try {
       final collection = await _getSafeCollection();
@@ -80,7 +77,8 @@ class MongoService {
         .set('title', log.title)
         .set('description', log.description)
         .set('category', log.category)
-        .set('date', log.date);
+        .set('date', log.date)
+        .set('author', log.author); 
 
       await collection.update(where.id(log.id!), modifier);
       await LogHelper.writeLog("DATABASE: Update '${log.title}' Berhasil", source: _source, level: 2);
@@ -90,7 +88,6 @@ class MongoService {
     }
   }
 
-  /// DELETE: Menghapus dokumen
   Future<void> deleteLog(ObjectId id) async {
     try {
       final collection = await _getSafeCollection();
