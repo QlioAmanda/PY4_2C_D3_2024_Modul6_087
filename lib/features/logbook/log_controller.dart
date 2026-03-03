@@ -37,7 +37,7 @@ class LogController {
     }
   }
 
-  // [MODUL 4] Tambah Data
+  // Tambah Data
   Future<void> addLog(String title, String description, String category) async {
     try {
       final newLog = LogModel(
@@ -56,7 +56,7 @@ class LogController {
     }
   }
 
-  // [MODUL 4] Update Data
+  // Update Data
   Future<void> updateLog(int index, String newTitle, String newDesc, String newCategory) async {
     try {
       // Cari data asli dari filtered list (biar ga salah edit pas lagi searching)

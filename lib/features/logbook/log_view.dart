@@ -338,7 +338,7 @@ class _LogViewState extends State<LogView> {
             ),
           ),
 
-          // 2. LIST DATA (DENGAN LOADING & REFRESH - Homework Task 2)
+          // 2. LIST DATA (DENGAN LOADING & REFRESH)
           Expanded(
             child: _isLoading 
               ? Center(child: CircularProgressIndicator(color: _themeColor))
