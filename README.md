@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # 📔 Resilient & Collaborative Logbook - Modul 5
 
 Aplikasi **Logbook digital tingkat lanjut** yang mengimplementasikan arsitektur **Offline-First** dan **Collaborative Intelligence**.  
@@ -55,3 +56,6 @@ Saya belajar bahwa dengan memusatkan kebijakan akses (**RBAC**), aplikasi menjad
 ### 3. Kedaulatan Data (Data Sovereignty)
 Melalui implementasi fitur privasi, saya memahami perbedaan antara **hak akses berdasarkan peran (Role-Based)** dan **hak akses berdasarkan kepemilikan (Owner-Based)**.  
 Memastikan bahwa **ketua tim sekalipun tidak dapat menghapus catatan privat anggota** merupakan penerapan **etika privasi data** yang krusial dalam dunia industri.
+=======
+# PY4_2C_D3_2024_Modul6_087
+>>>>>>> 39fc7c7c105dfbbd09fe20525b29dac3d84bf726
